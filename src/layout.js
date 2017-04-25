@@ -150,7 +150,7 @@ export default function() {
 function callable(_callable) {
   if (typeof _callable !== "function") {
     return function () {
-      return arg;
+      return _callable;
     };
   }
   return _callable;
