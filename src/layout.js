@@ -29,7 +29,8 @@ OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-/* Example usage
+/*
+  Example usage
 
   var labels = layout
     .data(data)
@@ -41,8 +42,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     .line({length: 10, angle: 45})
     .extent([100, 100])
     .layout()
-
 */
+
+var ANGLE = [0, 45, 90, 135, 180, 225, 270, 315, 360];
 
 export default function() {
   var layout = {};
@@ -51,48 +53,104 @@ export default function() {
 
   };
 
-  layout.data = function () {
+  layout.data = function (_data) {
+    if (!arguments.length) {
+      return data;
+    }
 
+    data = _data;
+    return layout;
   };
 
-  layout.label = function () {
+  layout.label = function (_label) {
+    if (!arguments.length) {
+      return label;
+    }
 
+    label = callable(_label);
+    return layout;
   };
 
-  layout.mark = function () {
+  layout.mark = function (_mark) {
+    if (!arguments.length) {
+      return mark;
+    }
 
+    mark = callable(_mark);
+    return layout;
   };
 
-  layout.baseline = function () {
+  layout.baseline = function (_baseline) {
+    if (!arguments.length) {
+      return baseline;
+    }
 
+    baseline = callable(_baseline);
+    return layout;
   };
 
-  layout.padding = function () {
+  layout.padding = function (_padding) {
+    if (!arguments.length) {
+      return padding;
+    }
 
+    padding = _padding;
+    return layout;
   };
 
-  layout.extent = function () {
-    return arguments.length ? (extent = [+_[0], +_[1]], layout) : extent;
+  layout.extent = function (_extent) {
+    if (!arguments.length) {
+      return extent;
+    }
+
+    extent = [+_extent[0], +_extent[1]];
+    return layout;
   };
 
-  layout.rotation = function () {
+  layout.rotation = function (_rotation) {
+    if (!arguments.length) {
+      return rotation;
+    }
 
+    rotation = _rotation;
+    return layout;
   };
 
-  layout.line = function () {
+  layout.line = function (_line) {
+    if (!arguments.length) {
+      return line;
+    }
 
+    if (typeof _line !== "object") {
+      line = {
+        length: _line,
+        angle: ANGLE
+      };
+    } else if (!_line.hasOwnProperty(angle) || _line.angle == null) {
+      line = _line;
+      line.angle = ANGLE;
+    } else if (!Array.isArray(_line.angle)) {
+      line = _line;
+      var iterator = line.angle;
+      line.angle = [];
+
+      for (var i = 0; i < 360; i += iterator) {
+        line.angle.push(i);
+      }
+    }
+
+    return layout;
   };
 
   return layout;
 };
 
 // convert arg into callable function
-function datum(arg) {
-  if (typeof arg === "function") {
-    return arg;
-  } else {
+function callable(_callable) {
+  if (typeof _callable !== "function") {
     return function () {
       return arg;
     };
   }
+  return _callable;
 }
