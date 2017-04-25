@@ -38,13 +38,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     .mark((datum) => datum.mark)
     .padding(5)
     .pivot(20)
-    .line({length: 10, angle: 45})
-    .extent([100, 100])
+    .line(10)
+    .size([100, 100])
     .layout()
 */
-
-var ANGLE = 45;
-var PADDING = 10;
 
 // methods for placement
 function RECT(d) {
@@ -102,6 +99,7 @@ function POINT(d) {
 }
 
 function position(label) {
+  console.log(label);
   // if mark is a rect
     // use RECT
   // if mark is a polygon/shape (area, geo)
@@ -115,23 +113,23 @@ function position(label) {
 }
 
 export default function() {
-  var layout = {},
+  var labels = {},
       data = [],
-      line = null,
       orient = null,
-      padding = PADDING,
-      label, mark, extent, pivot, line;
+      line = 0,
+      padding = 0,
+      label, mark, size, pivot, line;
 
-  layout.layout = function () {
+  labels.layout = function () {
     var _marks = [];
     var _labels = [];
 
-    var Labels = data.map(function (d) {
+    var labels = data.map(function (d) {
       var m = mark(d);
       var l = label(d);
       l = l[+l[0], +l[1]]
       _marks.push(m);
-      _labels.push(m);
+      _labels.push(l);
       return {
         collections: {
           marks: _marks,
@@ -149,84 +147,66 @@ export default function() {
         y: 0, // y location of label
         width: +l[0],
         height: +l[1],
-        angle: 0 // angle to display label at
+        angle: 0, // angle to display label at
+        datum: d
       }
     }).sort(function smallest(a, b) {
       return a.width - b.width;
     });
 
-    return Labels.map(position);
+    return labels.map(position);
   };
 
-  layout.data = function (d) {
+  labels.data = function (d) {
     if (!arguments.length) return data;
 
     data = d;
-    return layout;
+    return labels;
   };
 
-  layout.label = function (d) {
+  labels.label = function (d) {
     if (!arguments.length) return label;
 
     label = callable(d);
-    return layout;
+    return labels;
   };
 
-  layout.mark = function (d) {
+  labels.mark = function (d) {
     if (!arguments.length) return mark;
 
     mark = callable(d);
-    return layout;
+    return labels;
   };
 
-  layout.padding = function (d) {
+  labels.padding = function (d) {
     if (!arguments.length) return padding;
 
     padding = d;
-    return layout;
+    return labels;
   };
 
-  layout.extent = function (d) {
-    if (!arguments.length) return extent;
+  labels.size = function (d) {
+    if (!arguments.length) return size;
 
-    extent = [+d[0], +d[1]];
-    return layout;
+    size = [+d[0], +d[1]];
+    return labels;
   };
 
-  layout.pivot = function (d) {
+  labels.pivot = function (d) {
     if (!arguments.length) return pivot;
 
     pivot = d;
-    return layout;
+    return labels;
   };
 
-  layout.line = function (d) {
+  labels.line = function (d) {
     if (!arguments.length) return line;
 
-    if (typeof d !== "object") {
-      line = {
-        length: d,
-        angle: ANGLE
-      };
-    } else if (!d.hasOwnProperty(angle) || d.angle == null) {
-      line = d;
-      line.angle = ANGLE;
-    } else {
-      line = d;
-    }
-
-    if (!Array.isArray(line.angle)) {
-      var iterator = line.angle;
-      line.angle = [];
-      for (var i = 0; i < 360; i += iterator) {
-        line.angle.push(i);
-      }
-    }
-
-    return layout;
+    line = d;
+    return labels;
   };
 
-  return layout;
+  return labels;
 };
 
 // convert arg into callable function

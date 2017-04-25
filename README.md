@@ -29,3 +29,29 @@ Label layout algorithm for Vega dataflows.
 
 ### geo
 1. similar to area
+
+
+//  var point = {
+//     x: 1,
+//     y: 1
+//   };
+
+//   var rect = {
+//     x: 1,
+//     y: 1,
+//     x2: 1,
+//     y2: 1
+//   };
+
+//   var path = {
+//     string: "PATH", // line, arc
+//     horizon: "line" // line symbolizing the horizon
+//   }
+
+//   var shape = "SHAPE";
+
+//   var datum = {
+//     label: [100, 100], // width, height
+//     baseline: path | null,
+//     mark: point | rect | path | shape
+//   }
