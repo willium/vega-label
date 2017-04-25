@@ -47,29 +47,37 @@ var ANGLE = 45;
 var PADDING = 10;
 
 // methods for placement
-function TOP(d) {
-  // calculate marks dimensions (it should be a rect)
-  // if d.label width + d.padding * 2 < d.mark's width
+function RECT(d) {
+  // determine orientation through l.collections.marks
+  // if can't determine orientation use CENTER
+
+  // if orientation = center
+    // attempt to place at center
+    // if can't place at center, place above center
+    // if can't do that, place below
+
+  // if orientation = vertical
+    // calculate marks dimensions (it should be a rect)
     // if d.label height + d.padding * 2 < d.mark's height
-      // place label at top, inside of mark (w.r.t. padding)
-    // else place d.label above mark w.r.t. padding
-  // else attempt to place label above mark @ padding
-    // while occluding another label or mark, and not higher than line.length, move up
-    // add label, add line connecting label
-}
+      // if d.label width + d.padding * 2 < d.mark's width
+        // place label at right, inside of mark (w.r.t. padding)
+      // else place d.label right of mark w.r.t. padding
+    // else attempt to place label right of mark @ padding
+      // while occluding another label or mark, and not higher than line.length, move right
+      // add label, add line connecting label
 
-function RIGHT(d) {
-  // calculate marks dimensions (it should be a rect)
-  // if d.label height + d.padding * 2 < d.mark's height
+  // if orientation = horizontal
+    // calculate marks dimensions (it should be a rect)
     // if d.label width + d.padding * 2 < d.mark's width
-      // place label at right, inside of mark (w.r.t. padding)
-    // else place d.label right of mark w.r.t. padding
-  // else attempt to place label right of mark @ padding
-    // while occluding another label or mark, and not higher than line.length, move right
-    // add label, add line connecting label
+      // if d.label height + d.padding * 2 < d.mark's height
+        // place label at top, inside of mark (w.r.t. padding)
+      // else place d.label above mark w.r.t. padding
+    // else attempt to place label above mark @ padding
+      // while occluding another label or mark, and not higher than line.length, move up
+      // add label, add line connecting label
 }
 
-function INSIDE(d) {
+function POLY(d) {
   // find inscribed rectangles s.t. label.area + padding^2 + padding * label.width + padding * label.height <= rect.area, track pivot
   // if best rectangle with rect.angle < pivot
     // place label @ center of rectangle with sample angle
@@ -89,16 +97,13 @@ function LINE(d) {
 
 }
 
-function SCATTER(d) {
+function POINT(d) {
 
 }
 
 function position(label) {
   // if mark is a rect
-    // determine orientation through l.collections.marks
-    // if can't determine orientation use CENTER
-    // if orientation = vertical, use RIGHT
-    // if orientation = horizontal, use TOP
+    // use RECT
   // if mark is a polygon/shape (area, geo)
     // use INSIDE
   // if mark is an arc
