@@ -1,0 +1,8 @@
+*.sublime-workspace
+.DS_Store
+build/
+node_modules
+npm-debug.log
+yarn.lock
+wordcloud.js
+wordcloud_layout.js
