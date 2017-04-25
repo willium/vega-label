@@ -9,15 +9,15 @@
   ],
   "license": "BSD-3-Clause",
   "author": {
-    "name": "Jeffrey Heer",
-    "url": "http://idl.cs.washington.edu"
+    "name": "Will Strimling",
+    "url": "https://willium.com"
   },
   "main": "build/vega-label.js",
   "jsnext:main": "index",
   "module": "index",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vega/vega-label.git"
+    "url": "https://github.com/willium/vega-label.git"
   },
   "scripts": {
     "build": "npm run test && uglifyjs build/vega-label.js -c -m -o build/vega-label.min.js",
