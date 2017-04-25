@@ -47,7 +47,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 var ANGLE = [0, 45, 90, 135, 180, 225, 270, 315, 360];
 
 export default function() {
-  var layout = {};
+  var layout = {},
+      data, label, mark, baseline, padding, extent, rotation, line;
 
   layout.layout = function () {
 
