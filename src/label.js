@@ -89,12 +89,8 @@ prototype.transform = function(_, pulse) {
     .mark(function (datum) {
       // mark path or point or rect. infer marktype
       return datum.mark;
-      })
-    // for baseline labels
-    .baseline(function (datum) {
-      return datum.baseline;
     })
-    .rotation(20) // degrees for tilt (area chart)
+    .pivot(20) // degrees allowed for label to tilt (area chart)
     // spacing around label
     .padding(5)
     // allow for leading lines between labels and target
