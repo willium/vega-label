@@ -43,38 +43,95 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     .layout()
 */
 
-// methods for placement
-function RECT(d) {
-  // determine orientation through l.collections.marks
-  // if can't determine orientation use CENTER
+function orientation(marks) {
+  var start = marks[0].bounds;
+  var x1 = true;
+  var x2 = true;
+  var y1 = true;
+  var y2 = true;
 
-  // if orientation = center
-    // attempt to place at center
-    // if can't place at center, place above center
-    // if can't do that, place below
+  marks.forEach(function (m) {
+    var bounds = marks[0].bounds;
+    if (bounds.x1 != start.x1) {
+      x1 = false;
+    }
+    if (bounds.x2 != start.x2) {
+      x2 = false;
+    }
+    if (bounds.y1 != start.y1) {
+      y1 = false;
+    }
+    if (bounds.y2 != start.y2) {
+      y2 = false;
+    }
+    start = bounds;
+  });
 
-  // if orientation = vertical
-    // calculate marks dimensions (it should be a rect)
-    // if d.label height + d.padding * 2 < d.mark's height
-      // if d.label width + d.padding * 2 < d.mark's width
-        // place label at right, inside of mark (w.r.t. padding)
-      // else place d.label right of mark w.r.t. padding
-    // else attempt to place label right of mark @ padding
-      // while occluding another label or mark, and not higher than line.length, move right
-      // add label, add line connecting label
+  var v = x1 || x2;
+  var h = y1 || y2;
 
-  // if orientation = horizontal
-    // calculate marks dimensions (it should be a rect)
-    // if d.label width + d.padding * 2 < d.mark's width
-      // if d.label height + d.padding * 2 < d.mark's height
-        // place label at top, inside of mark (w.r.t. padding)
-      // else place d.label above mark w.r.t. padding
-    // else attempt to place label above mark @ padding
-      // while occluding another label or mark, and not higher than line.length, move up
-      // add label, add line connecting label
+  if (v && h) {
+    return 'center';
+  } else if (v) {
+    return 'vertical';
+  } else if (h) {
+    return 'horizontal';
+  } else {
+    return 'center';
+  }
 }
 
-function POLY(d) {
+// methods for placement
+function RECT(label) {
+  var labelWidth = label.bounds.x2 - label.bounds.x1;
+  var labelHeight = label.bounds.y2 - label.bounds.y1;
+  var mark = label.datum;
+  var orientation = orientation(label.collections.marks);
+  switch (orientation) {
+    case 'center':
+      // attempt to place at center
+      var markWidth = mark.bounds.x2 - mark.bounds.x1;
+      var markHeight = mark.bounds.y2 - mark.bounds.y1;
+      if (markWidth > labelWidth && markHeight > labelWidth) {
+        // if can't place at center, place above center if it fits
+        var x = mark.bounds.x1 + markWidth / 2;
+        var y = mark.bounds.y1 + markHeight / 2;
+        label.x = x;
+        label.y = y;
+      } else {
+        // place above if it can't fit
+        var x = mark.bounds.x1 + markWidth / 2;
+        var y = min(mark.bounds.y1, mark.bounds.y2) - labelHeight / 2;
+        label.x = x;
+        label.y = y;
+      }
+      // if can't do that, place below, then right, then left
+      // TODO
+      break;
+    case 'vertical':
+      // calculate marks dimensions (it should be a rect)
+      // if d.label height + d.padding * 2 < d.mark's height
+        // if d.label width + d.padding * 2 < d.mark's width
+          // place label at right, inside of mark (w.r.t. padding)
+        // else place d.label right of mark w.r.t. padding
+      // else attempt to place label right of mark @ padding
+        // while occluding another label or mark, and not higher than line.length, move right
+        // add label, add line connecting label
+      break;
+    case 'horizontal':
+      // calculate marks dimensions (it should be a rect)
+      // if d.label width + d.padding * 2 < d.mark's width
+        // if d.label height + d.padding * 2 < d.mark's height
+          // place label at top, inside of mark (w.r.t. padding)
+        // else place d.label above mark w.r.t. padding
+      // else attempt to place label above mark @ padding
+        // while occluding another label or mark, and not higher than line.length, move up
+        // add label, add line connecting label
+      break
+  }
+}
+
+function POLY(label) {
   // find inscribed rectangles s.t. label.area + padding^2 + padding * label.width + padding * label.height <= rect.area, track pivot
   // if best rectangle with rect.angle < pivot
     // place label @ center of rectangle with sample angle
@@ -86,39 +143,42 @@ function POLY(d) {
     // try 45 degree alternatives from center
 }
 
-function ARC(d) {
+function ARC(label) {
 
 }
 
-function LINE(d) {
+function LINE(label) {
 
 }
 
-function POINT(d) {
+function POINT(label) {
 
 }
 
 function position(label) {
-  console.log(label);
-  // if mark is a rect
-    // use RECT
-  // if mark is a polygon/shape (area, geo)
-    // use INSIDE
-  // if mark is an arc
-    // use ARC (fallback to area)
-  // if mark is a line
-    // use LINE
-  // if mark is a point
-    // use SCATTER
+  switch (label.mark.mark.marktype) {
+  case 'rect':
+    return RECT(label);
+  case 'line':
+    return LINE(label);
+  case 'point':
+    return POINT(label);
+  case 'arc':
+   return ARC(label); // or maybe poly
+  default:
+    return POLY(label);
+  }
+  // error(label);
 }
 
 export default function() {
   var labels = {},
-      data = [],
-      orient = null,
-      line = 0,
-      padding = 0,
-      label, mark, size, pivot, line;
+    data = [],
+    line = 0,
+    padding = 0,
+    pivot = 0,
+    size = [256, 256],
+    label, mark;
 
   labels.layout = function () {
     var _marks = [];
@@ -207,7 +267,7 @@ export default function() {
   };
 
   return labels;
-};
+}
 
 // convert arg into callable function
 function callable(d) {

@@ -1,9 +1,10 @@
 import layout from './layout';
-import {transforms, Transform} from 'vega-dataflow';
-import {inherits, isFunction, truthy} from 'vega-util';
+import {Transform} from 'vega-dataflow';
+import {boundMark} from 'vega-scenegraph';
+import {inherits, isFunction} from 'vega-util';
 
 var output = ['x', 'y', 'angle'];
-var params = [];
+var params = ['pivot', 'padding', 'size', 'line'];
 
 export default function Label(params) {
   Transform.call(this, layout(), params);
@@ -11,7 +12,7 @@ export default function Label(params) {
 
 var prototype = inherits(Label, Transform);
 
-prototype.transform = function(_, pulse) {
+prototype.transform = function (_, pulse) {
   function modp(param) {
     var p = _[param];
     return isFunction(p) && pulse.modified(p.fields);
@@ -24,20 +25,21 @@ prototype.transform = function(_, pulse) {
       as = _.as || output;
 
   var data = pulse.materialize(pulse.SOURCE).source;
-  data.forEach(function(t) {
-    t[as[0]] = NaN;
-    t[as[1]] = NaN;
-    t[as[2]] = 0;
+  data.forEach(function (d) {
+    d[as[0]] = NaN;
+    d[as[1]] = NaN;
+    d[as[2]] = 0;
+    d.bounds = boundMark(d.mark);
   });
 
   // configure layout
   var labels = layout
     .data(data)
-    .label(function (datum) {
-      return datum.label;
+    .label(function (d) {
+      return d.bounds;
     })
-    .mark(function (datum) {
-      return datum.mark;
+    .mark(function (d) {
+      return d.datum;
     })
     .pivot(_.pivot || 15)
     .padding(_.padding || 5)
@@ -50,21 +52,15 @@ prototype.transform = function(_, pulse) {
       dy = size[1] >> 1,
       i = 0,
       n = labels.length,
-      label, t;
+      label, d;
 
   for (; i<n; ++i) {
     label = labels[i];
-    t = label.datum;
-    t[as[0]] = label.x + dx;
-    t[as[1]] = label.y + dy;
-    t[as[2]] = label.angle;
+    d = label.datum;
+    d[as[0]] = label.x + dx;
+    d[as[1]] = label.y + dy;
+    d[as[2]] = label.angle;
   }
 
   return pulse.reflow(mod).modifies(as);
 };
-
-function extent(size, pulse) {
-  var e = new transforms.Extent();
-  e.transform({field: size, modified: truthy}, pulse);
-  return e.value;
-}

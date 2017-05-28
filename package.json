@@ -29,6 +29,7 @@
   "dependencies": {
     "vega-dataflow": ">=2.0.0-beta.4",
     "vega-scale": ">=2.0.0-beta",
+    "vega-scenegraph": "^2.0.0-beta.29",
     "vega-util": "1"
   },
   "optionalDependencies": {
