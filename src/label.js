@@ -35,9 +35,6 @@ prototype.transform = function (_, pulse) {
   // configure layout
   var labels = layout
     .data(data)
-    .label(function (d) {
-      return d.bounds;
-    })
     .mark(function (d) {
       return d.datum;
     })

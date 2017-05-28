@@ -34,7 +34,6 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   var labels = layout
     .data(data)
-    .label((datum) => datum.label)
     .mark((datum) => datum.mark)
     .padding(5)
     .pivot(20)
@@ -43,6 +42,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     .layout()
 */
 
+var STEP = 1;
+
 function orientation(marks) {
   var start = marks[0].bounds;
   var x1 = true;
@@ -50,8 +51,9 @@ function orientation(marks) {
   var y1 = true;
   var y2 = true;
 
-  marks.forEach(function (m) {
-    var bounds = marks[0].bounds;
+  for (var i = 0; i < marks.length; i++) {
+    var m = marks[i];
+    var bounds = m.bounds;
     if (bounds.x1 != start.x1) {
       x1 = false;
     }
@@ -65,7 +67,7 @@ function orientation(marks) {
       y2 = false;
     }
     start = bounds;
-  });
+  }
 
   var v = x1 || x2;
   var h = y1 || y2;
@@ -81,57 +83,100 @@ function orientation(marks) {
   }
 }
 
+function collision(bounds, collections) {
+  var i = 0;
+
+  // for (; i < collections.marks.length; i++) {
+  //   var mark = collections.marks[i];
+  //   // TODO use marks borders (path maybe? how to deal with rect?)
+  // }
+
+  // i = 0;
+  for (; i < collections.labels.length; i++) {
+    var label = collections.labels[i];
+    if (!(label.bounds.x1 > bounds.x2 || label.bounds.x2 < bounds.x1 || label.bounds.y1 > bounds.y2 || label.bounds.y2 < bounds.y1)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // methods for placement
-function RECT(label) {
-  var labelWidth = label.bounds.x2 - label.bounds.x1;
-  var labelHeight = label.bounds.y2 - label.bounds.y1;
+function rect(label) {
   var mark = label.datum;
-  var orientation = orientation(label.collections.marks);
-  switch (orientation) {
+  var markWidth = mark.bounds.x2 - mark.bounds.x1;
+  var markHeight = mark.bounds.y2 - mark.bounds.y1;
+  var x, y, s;
+  switch (orientation(label.collections.marks)) {
     case 'center':
       // attempt to place at center
-      var markWidth = mark.bounds.x2 - mark.bounds.x1;
-      var markHeight = mark.bounds.y2 - mark.bounds.y1;
-      if (markWidth > labelWidth && markHeight > labelWidth) {
-        // if can't place at center, place above center if it fits
-        var x = mark.bounds.x1 + markWidth / 2;
-        var y = mark.bounds.y1 + markHeight / 2;
+      x = mark.bounds.x1 + markWidth / 2;
+      y = mark.bounds.y1 + markHeight / 2;
+      // if can't place at center, place above center if it fits
+      if (markWidth > label.markWidth && markHeight > label.markWidth) {
         label.x = x;
         label.y = y;
+      // place above if it can't fit
       } else {
-        // place above if it can't fit
-        var x = mark.bounds.x1 + markWidth / 2;
-        var y = min(mark.bounds.y1, mark.bounds.y2) - labelHeight / 2;
+        y = mark.bounds.y1 - label.height - label.config.padding;
         label.x = x;
         label.y = y;
       }
-      // if can't do that, place below, then right, then left
-      // TODO
-      break;
+      // TODO: if can't do that, place below, then right, then left
+      return label;
     case 'vertical':
-      // calculate marks dimensions (it should be a rect)
-      // if d.label height + d.padding * 2 < d.mark's height
-        // if d.label width + d.padding * 2 < d.mark's width
-          // place label at right, inside of mark (w.r.t. padding)
-        // else place d.label right of mark w.r.t. padding
-      // else attempt to place label right of mark @ padding
-        // while occluding another label or mark, and not higher than line.length, move right
-        // add label, add line connecting label
-      break;
+      if (label.height + label.config.padding * 2 < markHeight && label.width + label.config.padding * 2 < markWidth) {
+        label.x = mark.bounds.x2 - label.width - label.config.padding;
+        label.opacity = 1.0;
+        return label;
+      }
+
+      s = 0;
+      do {
+        label.x = mark.bounds.x2 + label.config.padding + s * STEP;
+        s++;
+      } while (collision(label.bounds, label.collections) && label.config.padding + s * STEP < label.config.line);
+
+      if (!collision({
+        x1: label.x,
+        x2: label.x + label.width,
+        y1: label.bounds.y1,
+        y2: label.bounds.y2
+      }, label.collections)) {
+        label.opacity = 1.0;
+        // TODO: add line?
+      }
+      return label;
     case 'horizontal':
-      // calculate marks dimensions (it should be a rect)
-      // if d.label width + d.padding * 2 < d.mark's width
-        // if d.label height + d.padding * 2 < d.mark's height
-          // place label at top, inside of mark (w.r.t. padding)
-        // else place d.label above mark w.r.t. padding
-      // else attempt to place label above mark @ padding
-        // while occluding another label or mark, and not higher than line.length, move up
-        // add label, add line connecting label
-      break
+      if (label.height + label.config.padding * 2 < markHeight && label.width + label.config.padding * 2 < markWidth) {
+        label.y = mark.bounds.y1 + label.height + label.config.padding;
+        label.opacity = 1.0;
+        return label;
+      }
+
+      s = 0;
+      do {
+        // keep trying
+        label.y = mark.bounds.y1 - label.height - label.config.padding - s * STEP;
+        s++;
+      } while (collision(label.bounds, label.collections) && label.config.padding + s * STEP < label.config.line);
+
+      if (!collision({
+        x1: label.bounds.x1,
+        x2: label.bounds.y1,
+        y1: label.y,
+        y2: label.y + label.height
+      }, label.collections)) {
+        label.opacity = 1.0;
+        // TODO: add line?
+      }
+
+      return label;
   }
 }
 
-function POLY(label) {
+function poly(label) {
+  error(label);
   // find inscribed rectangles s.t. label.area + padding^2 + padding * label.width + padding * label.height <= rect.area, track pivot
   // if best rectangle with rect.angle < pivot
     // place label @ center of rectangle with sample angle
@@ -143,32 +188,31 @@ function POLY(label) {
     // try 45 degree alternatives from center
 }
 
-function ARC(label) {
-
+function arc(label) {
+  error(label);
 }
 
-function LINE(label) {
-
+function line(label) {
+  error(label);
 }
 
-function POINT(label) {
-
+function point(label) {
+  error(label);
 }
 
 function position(label) {
   switch (label.mark.mark.marktype) {
   case 'rect':
-    return RECT(label);
+    return rect(label);
   case 'line':
-    return LINE(label);
+    return line(label);
   case 'point':
-    return POINT(label);
+    return point(label);
   case 'arc':
-   return ARC(label); // or maybe poly
+   return arc(label); // or maybe poly
   default:
-    return POLY(label);
+    return poly(label);
   }
-  // error(label);
 }
 
 export default function() {
@@ -178,16 +222,14 @@ export default function() {
     padding = 0,
     pivot = 0,
     size = [256, 256],
-    label, mark;
+    mark;
 
-  labels.layout = function () {
+  labels.layout = function() {
     var _marks = [];
     var _labels = [];
 
-    var labels = data.map(function (d) {
-      var m = mark(d);
-      var l = label(d);
-      l = l[+l[0], +l[1]]
+    var labels = data.map(function (l) {
+      var m = mark(l);
       _marks.push(m);
       _labels.push(l);
       return {
@@ -205,10 +247,10 @@ export default function() {
         opacity: 0.0, // is label visible
         x: 0, // x location of label
         y: 0, // y location of label
-        width: +l[0],
-        height: +l[1],
+        width: +l.bounds.x2 - +l.bounds.x1,
+        height: +l.bounds.y2 - +l.bounds.y1,
         angle: 0, // angle to display label at
-        datum: d
+        datum: l
       }
     }).sort(function smallest(a, b) {
       return a.width - b.width;
@@ -217,52 +259,45 @@ export default function() {
     return labels.map(position);
   };
 
-  labels.data = function (d) {
+  labels.data = function (_data) {
     if (!arguments.length) return data;
 
-    data = d;
+    data = _data;
     return labels;
   };
 
-  labels.label = function (d) {
-    if (!arguments.length) return label;
-
-    label = callable(d);
-    return labels;
-  };
-
-  labels.mark = function (d) {
+  labels.mark = function (_mark) {
     if (!arguments.length) return mark;
 
-    mark = callable(d);
+    mark = callable(_mark);
     return labels;
   };
 
-  labels.padding = function (d) {
+  labels.padding = function (_padding) {
     if (!arguments.length) return padding;
 
-    padding = d;
+    padding = _padding;
     return labels;
   };
 
-  labels.size = function (d) {
+  labels.size = function (_size) {
     if (!arguments.length) return size;
 
-    size = [+d[0], +d[1]];
+    size = [+_size[0], +_size[1]];
     return labels;
   };
 
-  labels.pivot = function (d) {
+  labels.pivot = function (_pivot) {
     if (!arguments.length) return pivot;
 
-    pivot = d;
+    pivot = _pivot;
     return labels;
   };
 
-  labels.line = function (d) {
+  labels.line = function (_line) {
     if (!arguments.length) return line;
 
-    line = d;
+    line = _line;
     return labels;
   };
 
@@ -270,10 +305,10 @@ export default function() {
 }
 
 // convert arg into callable function
-function callable(d) {
-  if (typeof d === "function") return d;
+function callable (_arg) {
+  if (typeof _arg === "function") return _arg;
 
   return function () {
-    return d;
+    return _arg;
   }
 }
